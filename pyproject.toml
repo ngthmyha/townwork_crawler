@@ -1,0 +1,24 @@
+[project]
+name = "townwork-crawler"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Nguyen Thi My Ha",email = "hantm.nta@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "six (>=1.17.0,<2.0.0)",
+    "selenium (>=4.28.1,<5.0.0)",
+    "scrapy (>=2.12.0,<3.0.0)",
+    "scrapy-selenium (>=0.0.7,<0.0.8)",
+    "scrapy-splash (>=0.10.1,<0.11.0)",
+    "webdriver-manager (>=4.0.2,<5.0.0)",
+    "beautifulsoup4 (>=4.13.3,<5.0.0)",
+    "pymysql (>=1.1.1,<2.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

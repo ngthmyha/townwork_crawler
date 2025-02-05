@@ -1,0 +1,56 @@
+version: '3.9'
+
+services:
+  mysql:
+    image: mysql/mysql-server:latest
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 12345678
+      MYSQL_DATABASE: townwork_crawl
+      MYSQL_ROOT_HOST: '%'
+    ports:
+      - "3306:3306"
+    networks:
+      - base
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - /usr/share/zoneinfo:/usr/share/zoneinfo:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 30s
+      retries: 5
+      timeout: 20s
+
+  ubuntu:
+    image: ubuntu:latest
+    container_name: ubuntu
+    command: sleep infinity
+    networks:
+      - base
+    volumes:
+      - .:/data
+    stdin_open: true
+    tty: true
+  
+  web:
+    build: .
+    # command: bash -c "poetry run scrapy crawl job"
+    container_name: web
+    environment:
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=12345678
+      - MYSQL_DATABASE=townwork_crawl
+    volumes:
+      - .:/app
+    working_dir: /app/crawler
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mysql
+    networks:
+      - base
+    entrypoint: ["/bin/sh", "-c", "while true; do sleep 30; done"]
+
+networks:
+  base:
