@@ -12,13 +12,18 @@ BOT_NAME = "crawler"
 SPIDER_MODULES = ["crawler.spiders"]
 NEWSPIDER_MODULE = "crawler.spiders"
 
-
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = "crawler (+http://www.yourdomain.com)"
+USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+]
 
 # Obey robots.txt rules
 # ROBOTSTXT_OBEY = True
 ROBOTSTXT_OBEY = False
+AUTOTHROTTLE_ENABLED=False
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 #CONCURRENT_REQUESTS = 32
@@ -26,13 +31,14 @@ ROBOTSTXT_OBEY = False
 # Configure a delay for requests for the same website (default: 0)
 # See https://docs.scrapy.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
-#DOWNLOAD_DELAY = 3
+DOWNLOAD_DELAY = 0.25
 # The download delay setting will honor only one of:
 #CONCURRENT_REQUESTS_PER_DOMAIN = 16
 #CONCURRENT_REQUESTS_PER_IP = 16
 
 # Disable cookies (enabled by default)
-#COOKIES_ENABLED = False
+COOKIES_ENABLED = True
+REDIRECT_ENABLED = False
 
 # Disable Telnet Console (enabled by default)
 #TELNETCONSOLE_ENABLED = False
@@ -54,6 +60,18 @@ ROBOTSTXT_OBEY = False
 #DOWNLOADER_MIDDLEWARES = {
 #    "crawler.middlewares.CrawlerDownloaderMiddleware": 543,
 #}
+DOWNLOADER_MIDDLEWARES = {
+    'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
+    'scrapy_user_agents.middlewares.RandomUserAgentMiddleware': 400,
+    'scrapy.downloadermiddlewares.httpproxy.HttpProxyMiddleware': 750,
+    # 'scrapy_rotating_proxies.middlewares.RotatingProxyMiddleware': 800,
+}
+
+# ROTATING_PROXY_LIST = [
+#     "http://47.251.122.81:8888",
+#     "http://157.254.53.50:80",
+#     "http://83.217.23.36:8090",
+# ]
 
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html

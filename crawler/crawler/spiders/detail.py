@@ -1,85 +1,75 @@
 import scrapy
-import datetime, csv, re
-import pandas as pd
+import datetime
+import csv
 import os
 
 class DetailSpider(scrapy.Spider):
     name = "detail"
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36",
-        "Accept-Language": "en-US,en;q=0.9",
-    }
-    # start_urls = ["https://townwork.net/detail/clc_3016185005/"]
 
-    def count_rows(self, filename):
-        """Đếm số hàng trong file CSV"""
-        if not os.path.exists(filename):  # Nếu file chưa tồn tại, trả về 0
-            return 0
-        
-        with open(filename, newline="", encoding="utf-8") as csvfile:
-            return sum(1 for _ in csvfile) - 1
+    @staticmethod
+    def get_existing_urls(filenames):
+        urls = set()
+        for filename in filenames:
+            if os.path.exists(filename):
+                with open(filename, newline="", encoding="utf-8") as csvfile:
+                    urls.update(row["url"].strip() for row in csv.DictReader(csvfile) if row.get("url"))
+        return urls
 
     def start_requests(self):
-        job_data_count = self.count_rows("job_data.csv")
+        existing_urls = self.get_existing_urls(["job_data.csv", "error.csv"])
+        
         with open("job_urls.csv", newline="", encoding="utf-8") as csvfile:
             reader = csv.reader(csvfile)
-            next(reader) 
-            for index, row in enumerate(reader):
-                if index < job_data_count:
-                    continue
-                
+            next(reader, None)
+
+            for row in reader:
                 url = row[0].strip()
-                if url:
-                    yield scrapy.Request(url=url, callback=self.parse, headers=self.headers, dont_filter=True, meta={"handle_httpstatus_list": [301, 302]})
-        # for url in self.start_urls:
-        #     if url:
-        #         yield scrapy.Request(url=url, callback=self.parse, headers=self.headers)    
+                if url and url not in existing_urls:
+                    yield scrapy.Request(url=url, callback=self.parse, dont_filter=True, meta={"handle_httpstatus_all": True})
 
     def parse(self, response):
-        now = datetime.datetime.now()
-
-        print(response.xpath(
-            '//dl[@class="job-ditail-tbl-inner"]'
-            '[dt[contains(text(), "社名")]]/dd//p/text()'
-        ).get(default="").strip())
-
+        if response.status != 200:
+            self.log_error(response.url, response.status)
+            return
+        
         job_details = {
-            "Corporate_number": None, 
-            "Corporate_name": self.extract_field(response, "社名"),
-            "Address": self.extract_field(response, "会社住所"),
-            "Tel": self.extract_field(response, "代表電話番号"),
-            "Fax": None, 
-            "Company_url": self.extract_field(response, "ホームページリンク"),
-            "Email": None, 
-            "Capital": None, 
-            "Employee": None, 
-            "Established": None, 
-            "Crowl_at": now,
-            "Site_id": 6,
+            "url": response.url,
+            "corporate_number": None, 
+            "corporate_name": self.extract_field(response, "社名"),
+            "address": self.extract_field(response, "会社住所"),
+            "tel": self.extract_field(response, "代表電話番号"),
+            "fax": None, 
+            "company_url": self.extract_field(response, "ホームページリンク"),
+            "email": None, 
+            "capital": None, 
+            "employee": None, 
+            "established": None, 
+            "crowl_at": datetime.datetime.now(),
+            "site_id": 6,
         }
+        
         self.save_to_csv(job_details)
         yield job_details
 
     def extract_field(self, response, field_name):
-        result = response.xpath(
+        return response.xpath(
             f'//dl[@class="job-ditail-tbl-inner"][dt[contains(text(),"{field_name}")]]/dd'
         ).xpath('string(.)').get(default="").strip()
 
-        return result
-    
     def save_to_csv(self, data, filename="job_data.csv"):
-        file_exists = False
-        try:
-            with open(filename, "r", encoding="utf-8") as f:
-                file_exists = True
-        except FileNotFoundError:
-            pass
-
+        file_exists = os.path.exists(filename)
+        
         with open(filename, "a", newline="", encoding="utf-8") as csvfile:
-            fieldnames = data.keys()
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-
+            writer = csv.DictWriter(csvfile, fieldnames=data.keys())
             if not file_exists:
-                writer.writeheader() 
-
+                writer.writeheader()
             writer.writerow(data)
+
+    def log_error(self, url, status, filename="error.csv"):
+        file_exists = os.path.exists(filename)
+        
+        with open(filename, "a", newline="", encoding="utf-8") as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=["url", "status"])
+            if not file_exists:
+                writer.writeheader()
+            writer.writerow({"url": url, "status": status})

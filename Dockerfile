@@ -75,7 +75,8 @@ COPY pyproject.toml poetry.lock /app/
 WORKDIR /app/crawler
 
 # Install dependencies using Poetry
-RUN poetry add six selenium scrapy pymysql
+RUN poetry add six selenium scrapy pymysql pandas scrapy-rotating-proxies scrapy-user-agents
+RUN poetry update six selenium scrapy pymysql pandas scrapy-rotating-proxies scrapy-user-agents
 
 # Use xvfb to enable GUI-less browser execution
 ENV DISPLAY=:99
